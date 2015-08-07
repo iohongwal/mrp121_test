@@ -11,6 +11,7 @@ void setup() {
   pinMode(irqpin, INPUT);
   digitalWrite(irqpin, HIGH); //enable pullup resistor
   myservo.attach(8);
+  myservo.write(0);
   Serial.begin(9600);
   Wire.begin();
   mpr121_setup();
@@ -38,37 +39,15 @@ void readTouchInputs() {
 
     for (int i = 0; i < 12; i++) { // Check what electrodes were pressed
       if (touched & (1 << i)) {
+        x = i;
 
 
         if (touchStates[i] == 0) {
-          int k=0;
-          switch(i) {
-            case 1 : k=16;myservo.write(k);
-            break;
-            case 2 : k=16*2;myservo.write(k);
-            break;
-            case 3 : k=16*3;myservo.write(k);
-            break;
-            case 4 : k=16*4;myservo.write(k);
-            break;
-            case 5 : k=16*5;myservo.write(k);
-            break;
-            case 6 : k=16*6;myservo.write(k);
-            break;
-            case 7 : k=16*7;myservo.write(k);
-            break;
-            case 8 : k=16*8;myservo.write(k);
-            break;
-            case 9 : k=16*9;myservo.write(k);
-            break;
-            case 10 : k=160;myservo.write(k);
-            break;
-            case 11: k=180;myservo.write(k);
-            break;
-            
-            
-        }
-          
+          Serial.print("x");
+          Serial.println(x);
+          Serial.print("m");
+          Serial.println(m);
+          m = x;
         }
 
 
