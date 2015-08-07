@@ -4,24 +4,25 @@
 #include <Wire.h>
 int m = 0;
 Servo myservo;
+int k = 0;
 int irqpin = 2;  // Digital 2
 boolean touchStates[12]; //to keep track of the previous touch states
-int x =0;
+int x = 0;
 void setup() {
   pinMode(irqpin, INPUT);
   digitalWrite(irqpin, HIGH); //enable pullup resistor
   myservo.attach(8);
   myservo.write(0);
-  Serial.begin(9600);
+  
   Wire.begin();
   mpr121_setup();
 
-
+Serial.begin(9600);
 }
 
 void loop() {
   readTouchInputs();
- 
+
 }
 
 
@@ -43,26 +44,43 @@ void readTouchInputs() {
 
 
         if (touchStates[i] == 0) {
-          Serial.print("x");
-          Serial.println(x);
-          Serial.print("m");
-          Serial.println(m);
+          int e = x - m;
           m = x;
+          if (abs(e) == 1) {
+            Serial.print(e);
+            if (e == 1) {
+              k+=16;
+            }
+            
+            else if (k > 180) {
+              k = 180;
+            }
+            else if (k < 0) {
+              k = 0;
+            }
+            else {
+              k -= 16;
+            }
+            myservo.write(k);
+            Serial.print("\t");
+           Serial.println(k);
+          }
         }
+      
 
 
-        touchStates[i] = 1;
-
-      }
-      else {
-
-        touchStates[i] = 0;
-      }
+      touchStates[i] = 1;
 
     }
+    else {
 
+      touchStates[i] = 0;
+    }
 
   }
+
+
+}
 }
 
 
