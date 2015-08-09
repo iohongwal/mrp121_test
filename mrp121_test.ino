@@ -1,86 +1,154 @@
 #include <Servo.h>
-
 #include "mpr121.h"
 #include <Wire.h>
-int m = 0;
 Servo myservo;
-int k = 0;
-int irqpin = 2;  // Digital 2
-boolean touchStates[12]; //to keep track of the previous touch states
-int x = 0;
+int irqpin = 2;
+boolean touchStates[12];
+int state[3]={0,0,0};
 void setup() {
   pinMode(irqpin, INPUT);
-  digitalWrite(irqpin, HIGH); //enable pullup resistor
-  myservo.attach(8);
-  myservo.write(0);
-  
   Wire.begin();
   mpr121_setup();
-
-Serial.begin(9600);
+  Serial.begin(9600);
+  myservo.attach(8);
+  myservo.write(0);
+  digitalWrite(irqpin, HIGH);
 }
 
 void loop() {
-  readTouchInputs();
-
-}
-
-
-void readTouchInputs() {
   if (!checkInterrupt()) {
-
-    //read the touch state from the MPR121
     Wire.requestFrom(0x5A, 2);
-
     byte LSB = Wire.read();
     byte MSB = Wire.read();
+    uint16_t touched = ((MSB << 8) | LSB);
+    readTouchInputs(touched);
+    process(touched);
+  }
+}
 
-    uint16_t touched = ((MSB << 8) | LSB); //16bits that make up the touch states
-
-
-    for (int i = 0; i < 12; i++) { // Check what electrodes were pressed
-      if (touched & (1 << i)) {
-        x = i;
-
-
-        if (touchStates[i] == 0) {
-          int e = x - m;
-          m = x;
-          if (abs(e) == 1) {
-            Serial.print(e);
-            if (e == 1) {
-              k+=16;
-            }
-            
-            else if (k > 180) {
-              k = 180;
-            }
-            else if (k < 0) {
-              k = 0;
-            }
-            else {
-              k -= 16;
-            }
-            myservo.write(k);
-            Serial.print("\t");
-           Serial.println(k);
-          }
-        }
-      
-
-
+void readTouchInputs(uint16_t touched) {
+  for (int i = 0; i < 12; i++) {
+    if (touched & (1 << i)) {
       touchStates[i] = 1;
-
-    }
-    else {
-
+    } else {
       touchStates[i] = 0;
     }
-
   }
-
-
 }
+
+int process(uint16_t touched) {
+  int e=0,m=0;
+  int check[3] = {0, 0, 0};
+  int local1 = local_1(touched);
+  int local2 = local_2(touched);
+  int local3 = local_3(touched);
+  if (local1 > local2) {
+    if (local1 > local3) {
+      check[0] = 1;
+    }
+  }
+  else if (local2 > local1) {
+    if (local2 > local3) {
+      check[1] = 1;
+    }
+  }
+  else if (local3 > local1) {
+    if (local3 > local2) {
+      check[2] = 1;
+    }
+  }
+  Serial.print(" ");
+  for (int i = 0; i < 3; i++) {
+    Serial.print(check[i]);
+  }
+  if (check[0] == 1) {
+    state[0]=1;
+    state[1]=0;
+    state[2]=0;
+    m=0;
+  }
+  if (check[1] == 1&&state[0]==1) {
+    state[0]=1;
+    state[1]=1;
+    state[2]=0;
+    m=1;
+  }
+  if(check[1] == 1&&state[0]!=1&&state[2]!=1){
+    state[0]=0;
+    state[1]=1;
+    state[2]=0;
+    m=0;
+  }
+ if(check[2] == 1&&state[1]==1){
+    state[0]=0;
+    state[1]=1;
+    state[2]=1;
+    m=1;
+  }
+  
+ if(check[2] == 1&&state[1]!=1&&state[0]!=1){
+    state[0]=0;
+    state[1]=0;
+    state[2]=1;
+    m=0;
+ }
+  
+  
+ 
+  
+  
+
+  Serial.print(" ");
+  for (int i = 0; i < 3; i++) {
+    Serial.print(state[i]);
+  }
+  Serial.print(" ");
+  Serial.print(m);
+  Serial.println();
+}
+
+int local_1(uint16_t touched) {
+  int m = 0;
+  for (int i = 0; i < 4; i++) {
+    if (touched & (1 << i)) {
+      touchStates[i] = 1;
+    } else {
+      touchStates[i] = 0;
+    }
+    if (touchStates[i] == 1) {
+      m++;
+    }
+  }
+  return m;
+}
+
+int local_2(uint16_t touched) {
+  int m = 0;
+  for (int i = 4; i < 8; i++) {
+    if (touched & (1 << i)) {
+      touchStates[i] = 1;
+    } else {
+      touchStates[i] = 0;
+    }
+    if (touchStates[i] == 1) {
+      m++;
+    }
+  }
+  return m;
+}
+int local_3(uint16_t touched) {
+  int m = 0;
+  for (int i = 8; i < 12; i++) {
+    if (touched & (1 << i)) {
+      touchStates[i] = 1;
+    } else {
+      touchStates[i] = 0;
+    }
+    if (touchStates[i] == 1) {
+      m++;
+    }
+  }
+  return m;
 }
 
 
