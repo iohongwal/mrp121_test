@@ -4,7 +4,7 @@
 Servo myservo;
 int irqpin = 2;
 boolean touchStates[12];
-int state[3]={0,0,0};
+int state=0;
 void setup() {
   pinMode(irqpin, INPUT);
   Wire.begin();
@@ -62,46 +62,37 @@ int process(uint16_t touched) {
     Serial.print(check[i]);
   }
   if (check[0] == 1) {
-    state[0]=1;
-    state[1]=0;
-    state[2]=0;
+    state=1;
     m=0;
   }
-  if (check[1] == 1&&state[0]==1) {
-    state[0]=1;
-    state[1]=1;
-    state[2]=0;
+  if (check[1] == 1&&state==1) {
     m=1;
+    state=2;
   }
-  if(check[1] == 1&&state[0]!=1&&state[2]!=1){
-    state[0]=0;
-    state[1]=1;
-    state[2]=0;
+  else if (check[1] == 1) {
+    state=2;
     m=0;
   }
- if(check[2] == 1&&state[1]==1){
-    state[0]=0;
-    state[1]=1;
-    state[2]=1;
+  if (check[2] == 1&&state==2) {
     m=1;
+    state=3;
   }
-  
- if(check[2] == 1&&state[1]!=1&&state[0]!=1){
-    state[0]=0;
-    state[1]=0;
-    state[2]=1;
+  else if (check[2] == 1) {
+    state=3;
     m=0;
- }
-  
-  
+  }
+  if (check[1] == 1&&state==3) {
+    m=-1;
+    state=2;
+  }
+  else if (check[1] == 1) {
+    state=2;
+    m=0;
+  }
  
   
-  
-
-  Serial.print(" ");
-  for (int i = 0; i < 3; i++) {
-    Serial.print(state[i]);
-  }
+ Serial.print(" ");
+  Serial.print(state);
   Serial.print(" ");
   Serial.print(m);
   Serial.println();
